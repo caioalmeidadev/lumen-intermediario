@@ -45,7 +45,30 @@ $app->group(['prefix' => 'api'], function() use ($app){
             return response()->json(['message' => 'Invalid Credentials'],400);
         }
 
+        $expiration = new \Carbon\Carbon();
+        $expiration->addHour(2);
+        $user->api_token = sha1(str_random(32)) .'.'.sha1(str_random(32));
+        $user->api_token_expiration = $expiration->format('Y-m-d H:i:s');
+        $user->save();
+
+        return [
+            'api_token' => $user->api_token,
+            'api_token_expiration' => $user->api_token_expiration
+        ];
 
 
     });
+
+    $app->group(['middleware' => ['auth','token-expired']],function() use ($app){
+
+        $app->get('/user-auth',function (Request $request){
+            return $request->user();
+        });
+
+        $app->get('/clients',function(){
+            return ['ok'];
+        });
+
+    });
+
 });
